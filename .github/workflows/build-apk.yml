@@ -25,30 +25,32 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
 
       - name: Accept Android licenses and install SDK packages
         shell: bash
         run: |
           set -euxo pipefail
 
-          export PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${PATH}"
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/android-sdk}}"
+          export ANDROID_HOME="${sdk_root}"
+          export ANDROID_SDK_ROOT="${sdk_root}"
+          export PATH="${sdk_root}/cmdline-tools/latest/bin:${sdk_root}/platform-tools:${PATH}"
 
-          if [ ! -x "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" ]; then
-            echo "ERROR: sdkmanager is not available in ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin" >&2
+          if ! command -v sdkmanager >/dev/null 2>&1; then
+            echo "ERROR: sdkmanager is not available in PATH" >&2
             exit 1
           fi
 
-          set +e
-          yes 2>/dev/null | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null
-          sdk_status=${PIPESTATUS[1]}
-          set -e
-
-          if [ "$sdk_status" -ne 0 ] && [ "$sdk_status" -ne 141 ]; then
-            echo "ERROR: Android SDK license acceptance failed with exit code ${sdk_status}" >&2
-            exit "$sdk_status"
-          fi
-
-          sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          yes 2>/dev/null | sdkmanager --sdk_root="${sdk_root}" --licenses >/dev/null
+          sdkmanager --sdk_root="${sdk_root}" --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Set up Gradle 8.10.2
         uses: gradle/actions/setup-gradle@v4
