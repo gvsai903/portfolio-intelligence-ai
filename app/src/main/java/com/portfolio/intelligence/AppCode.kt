@@ -117,7 +117,7 @@ object CsvProcessor {
         BufferedReader(InputStreamReader(inputStream)).forEachLine { raw ->
             val line = raw.trim()
             if (line.isNotEmpty()) {
-                val tokens = line.split(",").map { it.trim().replace("\"", "") }
+                val tokens = line.split(",").map { it.trim().replace(""", "") }
                 if (symCol == -1) {
                     tokens.forEachIndexed { i, col ->
                         when (col.lowercase()) {
@@ -236,7 +236,6 @@ class PortfolioRepository {
             Holding("LT", 60.0, 2900.00, 3550.00, 3510.00, "Capital Goods"),
             Holding("ICICIBANK", 200.0, 910.00, 1220.40, 1208.00, "Financials")
         )
-        // Programmatically expand to 106 holdings for complete scale testing
         for (i in 9..106) {
             val cost = 100.0 + (i * 15)
             list.add(Holding("NSE_STOCK_$i", 20.0 + i, cost, cost * 1.08, cost * 1.06, "Diversified"))
@@ -342,7 +341,7 @@ fun DashboardScreen(vm: PortfolioViewModel) {
                     Text("TOTAL PORTFOLIO VALUATION", fontSize = 11.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
                     Text(current.toInr(), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
                     val pnlSign = if (pnl >= 0) "+" else ""
-                    Text("$pnlSign${pnl.toInr()} ($pnlSign${String.format(\"%.2f\", pnlPct)}%) All-Time", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (pnl >= 0) GainGreen else LossRed)
+                    Text("$pnlSign${pnl.toInr()} ($pnlSign${String.format("%.2f", pnlPct)}%) All-Time", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (pnl >= 0) GainGreen else LossRed)
                 }
             }
         }
@@ -409,7 +408,7 @@ fun PortfolioScreen(vm: PortfolioViewModel, onSelect: (String) -> Unit) {
                         Column(horizontalAlignment = Alignment.End) {
                             Text(h.currentPrice.toInr(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             val pColor = if (h.unrealizedPnL >= 0) GainGreen else LossRed
-                            Text("${if (h.unrealizedPnL >= 0) \"+\" else \"\"}${h.unrealizedPnL.toInr()}", fontSize = 11.sp, color = pColor, fontWeight = FontWeight.SemiBold)
+                            Text("${if (h.unrealizedPnL >= 0) "+" else ""}${h.unrealizedPnL.toInr()}", fontSize = 11.sp, color = pColor, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
