@@ -117,7 +117,7 @@ object CsvProcessor {
         BufferedReader(InputStreamReader(inputStream)).forEachLine { raw ->
             val line = raw.trim()
             if (line.isNotEmpty()) {
-                val tokens = line.split(",").map { it.trim().replace(""", "") }
+                val tokens = line.split(",").map { it.trim().replace("\"", "") }
                 if (symCol == -1) {
                     tokens.forEachIndexed { i, col ->
                         when (col.lowercase()) {
