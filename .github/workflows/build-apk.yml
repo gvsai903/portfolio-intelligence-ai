@@ -31,22 +31,21 @@ jobs:
             platforms;android-35
             build-tools;35.0.0
 
-      - name: Accept Android licenses and install SDK packages
+      - name: Accept Android licenses
         shell: bash
         run: |
           set -euxo pipefail
-
           export ANDROID_HOME="${{ github.workspace }}/android-sdk"
           export ANDROID_SDK_ROOT="${{ github.workspace }}/android-sdk"
-          export PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
 
-          if ! command -v sdkmanager >/dev/null 2>&1; then
-            echo "ERROR: sdkmanager is not available in PATH" >&2
-            exit 1
-          fi
-
-          yes | sdkmanager --sdk_root="${ANDROID_HOME}" --licenses
-          sdkmanager --sdk_root="${ANDROID_HOME}" --install \
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME="${{ github.workspace }}/android-sdk"
+          export ANDROID_SDK_ROOT="${{ github.workspace }}/android-sdk"
+          sdkmanager --sdk_root="$ANDROID_HOME" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
