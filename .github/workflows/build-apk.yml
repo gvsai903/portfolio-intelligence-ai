@@ -22,14 +22,13 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Android SDK packages
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         shell: bash
         run: |
           set -euxo pipefail
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --install "cmdline-tools;latest" >/dev/null
-          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses >/dev/null
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --install \
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install \
+            "cmdline-tools;latest" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
