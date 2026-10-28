@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,17 +22,35 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
+      - name: Install Android SDK
         shell: bash
         run: |
           set -euxo pipefail
+
+          mkdir -p "$ANDROID_SDK_ROOT"
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+
+          cd "$ANDROID_SDK_ROOT/cmdline-tools"
+
+          curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline-tools.zip
+          unzip -q -o cmdline-tools.zip
+          rm -f cmdline-tools.zip
+
+          # The official install layout is:
+          # $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
+          mkdir -p latest
+          shopt -s dotglob nullglob
+          for d in cmdline-tools*; do
+            if [ -d "$d" ]; then
+              cp -a "$d"/. latest/
+              rm -rf "$d"
+            fi
+          done
+
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager --install \
-            "cmdline-tools;latest" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
@@ -46,4 +68,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PortfolioIntelligenceAI-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apka
