@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
-      ANDROID_HOME: ${{ runner.temp }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
     steps:
       - name: Checkout code
@@ -23,18 +23,32 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Android SDK command line tools
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android licenses and install SDK packages
         shell: bash
         run: |
           set -euxo pipefail
-          mkdir -p "$ANDROID_SDK_ROOT"
-          echo "SDK root: $ANDROID_SDK_ROOT"
 
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+          export PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${PATH}"
 
-          # Install the required command line tools package
-          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses >/dev/null
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --install "cmdline-tools;latest" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          if [ ! -x "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "ERROR: sdkmanager is not available in ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin" >&2
+            exit 1
+          fi
+
+          set +e
+          yes 2>/dev/null | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null
+          sdk_status=${PIPESTATUS[1]}
+          set -e
+
+          if [ "$sdk_status" -ne 0 ] && [ "$sdk_status" -ne 141 ]; then
+            echo "ERROR: Android SDK license acceptance failed with exit code ${sdk_status}" >&2
+            exit "$sdk_status"
+          fi
+
+          sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle 8.10.2
         uses: gradle/actions/setup-gradle@v4
@@ -45,7 +59,6 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
           gradle assembleDebug --no-daemon --stacktrace
 
       - name: Verify APK exists
