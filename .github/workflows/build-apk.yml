@@ -31,10 +31,22 @@ jobs:
       - name: Accept Android licenses
         shell: bash
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           export ANDROID_HOME="${{ github.workspace }}/android-sdk"
           export ANDROID_SDK_ROOT="${{ github.workspace }}/android-sdk"
-          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+
+          # `yes` can receive SIGPIPE when sdkmanager exits after accepting licenses.
+          # Temporarily disable pipefail so the expected broken pipe does not fail the job
+          # while still checking the real sdkmanager exit status below.
+          set +o pipefail
+          yes 2>/dev/null | sdkmanager --sdk_root="$ANDROID_HOME" --licenses >/dev/null
+          sdk_status=$?
+          set -o pipefail
+
+          if [ "$sdk_status" -ne 0 ]; then
+            echo "ERROR: Failed to accept Android SDK licenses." >&2
+            exit "$sdk_status"
+          fi
 
       - name: Install Android SDK packages
         shell: bash
